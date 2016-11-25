@@ -3,10 +3,11 @@ package travellog;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.drew.lang.ByteArrayReader;
-import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
+import com.drew.metadata.exif.ExifDirectoryBase;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifReader;
+import com.drew.metadata.exif.GpsDirectory;
 import com.drew.tools.FileUtil;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,8 +45,14 @@ public class TravelLogApp {
 
                     new ExifReader().extract(new ByteArrayReader(FileUtil.readBytes(f.toFile())), meta);
                     
-                    ExifIFD0Directory directory = meta.getFirstDirectoryOfType(ExifIFD0Directory.class);
-                    
+                    ExifIFD0Directory metaDir = meta.getFirstDirectoryOfType(ExifIFD0Directory.class);
+                    final String datetime = metaDir.getString(ExifDirectoryBase.TAG_DATETIME);
+
+                    GpsDirectory gpsMetaDir = meta.getFirstDirectoryOfType(GpsDirectory.class);
+                    final String latitude = gpsMetaDir.getString(GpsDirectory.TAG_DEST_LATITUDE);
+                    final String longitude = gpsMetaDir.getString(GpsDirectory.TAG_DEST_LONGITUDE);
+
+                    LOG.info("Pic taken: {}, GPS: {}, {}", datetime, longitude, latitude);
                 } catch (IOException jpegReadFail) {
                     LOG.error("", jpegReadFail);
                 }
