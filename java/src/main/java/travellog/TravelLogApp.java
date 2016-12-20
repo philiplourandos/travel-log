@@ -2,6 +2,8 @@ package travellog;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.drew.imaging.ImageMetadataReader;
+import com.drew.imaging.ImageProcessingException;
 import com.drew.lang.ByteArrayReader;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifDirectoryBase;
@@ -60,10 +62,8 @@ public class TravelLogApp {
                 LOG.info("Processing file: {}", f.toString());
 
                 try {
-                    Metadata meta = new Metadata();
+                    Metadata meta = ImageMetadataReader.readMetadata(f.toFile());
 
-                    new ExifReader().extract(new ByteArrayReader(FileUtil.readBytes(f.toFile())), meta);
-                    
                     ExifIFD0Directory metaDir = meta.getFirstDirectoryOfType(ExifIFD0Directory.class);
                     final String datetime = metaDir.getString(ExifDirectoryBase.TAG_DATETIME);
 
@@ -74,7 +74,7 @@ public class TravelLogApp {
                     LOG.info("Pic taken: {}, Longitude: {}, Latitude: {}", datetime, longitude, latitude);
                     
                     logs.add(new LogInfo(datetime, longitude, latitude, f.getFileName().toString()));
-                } catch (IOException jpegReadFail) {
+                } catch (IOException | ImageProcessingException jpegReadFail) {
                     LOG.error("", jpegReadFail);
                 }
             });
