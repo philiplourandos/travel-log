@@ -9,6 +9,7 @@ import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifDirectoryBase;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.GpsDirectory;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -75,8 +76,16 @@ public class TravelLogApp {
                 }
             });
             
-            logs.stream().sorted(LogInfo::compareTo).forEach(l -> LOG.info("Pic taken: {}, Longitude: {}, Latitude: {}, file: {}", 
-                    l.getTimestamp(), l.getLongitude(), l.getLatitude(), l.getFilename()));
+            final StringBuilder reportBuilder = new StringBuilder(2000);
+            reportBuilder.append("Date & Time, Longitude, Latitude\n");
+            
+            logs.stream().sorted(LogInfo::compareTo).forEach(l -> {
+                reportBuilder.append(l.getTimestamp().toString()).append(',')
+                        .append(l.getLongitude()).append(',')
+                        .append(l.getLatitude()).append('\n');
+                });
+            
+            Files.write(Paths.get(reportFile), reportBuilder.toString().getBytes());
         } catch (IOException invalidDir) {
             LOG.error("Unable to list files in directory", invalidDir);
         }
