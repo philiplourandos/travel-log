@@ -2,10 +2,13 @@ package travellog;
 
 import com.beust.jcommander.ParameterException;
 import java.io.IOException;
+import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.springframework.core.io.ClassPathResource;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  *
@@ -19,7 +22,14 @@ public class AppTest {
     public void successProcessFiles() throws IOException {
         ClassPathResource imageDirectory = new ClassPathResource(".");
         
-        TravelLogApp.main(new String[]{"-o", "", "-d" , imageDirectory.getFile().getPath()});
+        TravelLogApp app = new TravelLogApp();
+        app.setDirectory(imageDirectory.getFile().getPath());
+        app.setReportFile("report.csv");
+        app.run();
+
+        List<LogInfo> logs = app.getLogs();
+        assertEquals(3, logs.size());
+        
     }
     
     @Test(expected = ParameterException.class)
