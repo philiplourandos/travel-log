@@ -4,13 +4,11 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
-import com.drew.lang.ByteArrayReader;
+import com.drew.lang.GeoLocation;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifDirectoryBase;
 import com.drew.metadata.exif.ExifIFD0Directory;
-import com.drew.metadata.exif.ExifReader;
 import com.drew.metadata.exif.GpsDirectory;
-import com.drew.tools.FileUtil;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,8 +57,6 @@ public class TravelLogApp {
         
         try {
             Files.list(inputDirectory).filter(fileFilter).forEach(f -> {
-                LOG.info("Processing file: {}", f.toString());
-
                 try {
                     Metadata meta = ImageMetadataReader.readMetadata(f.toFile());
 
@@ -68,21 +64,32 @@ public class TravelLogApp {
                     final String datetime = metaDir.getString(ExifDirectoryBase.TAG_DATETIME);
 
                     GpsDirectory gpsMetaDir = meta.getFirstDirectoryOfType(GpsDirectory.class);
-                    final String latitude = gpsMetaDir.getString(GpsDirectory.TAG_DEST_LATITUDE);
-                    final String longitude = gpsMetaDir.getString(GpsDirectory.TAG_DEST_LONGITUDE);
-
-                    LOG.info("Pic taken: {}, Longitude: {}, Latitude: {}", datetime, longitude, latitude);
+                    GeoLocation location = gpsMetaDir.getGeoLocation();
+                    final double latitude = location.getLatitude();
+                    final double longitude = location.getLongitude();
                     
-                    logs.add(new LogInfo(datetime, longitude, latitude, f.getFileName().toString()));
+
+                    logs.add(new LogInfo(datetime, longitude, latitude, f.toString()));
                 } catch (IOException | ImageProcessingException jpegReadFail) {
                     LOG.error("", jpegReadFail);
                 }
             });
+            
+            logs.stream().sorted(LogInfo::compareTo).forEach(l -> LOG.info("Pic taken: {}, Longitude: {}, Latitude: {}, file: {}", 
+                    l.getTimestamp(), l.getLongitude(), l.getLatitude(), l.getFilename()));
         } catch (IOException invalidDir) {
             LOG.error("Unable to list files in directory", invalidDir);
         }
     }
 
+    public void setDirectory(String directory) {
+        this.directory = directory;
+    }
+
+    public void setReportFile(String reportFile) {
+        this.reportFile = reportFile;
+    }
+   
     public List<LogInfo> getLogs() {
         return logs;
     }
